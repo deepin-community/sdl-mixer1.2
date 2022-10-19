@@ -1,0 +1,61 @@
+From: Fabian Greffrath <fabian@greffrath.com>
+Date: Wed, 27 Oct 2021 11:24:28 +0100
+Subject: no sf2 sound fonts loaded by default
+
+Introduced in 1.2.12-6 (Thu, 11 Jul 2013 12:17:15 +0100)
+
+Last-Update: 2013-10-09
+Bug-Debian: http://bugs.debian.org/715461
+---
+ mixer.c |  5 +++++
+ music.c | 11 ++++++++---
+ 2 files changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/mixer.c b/mixer.c
+index ecb5da9..7f168d4 100644
+--- a/mixer.c
++++ b/mixer.c
+@@ -148,6 +148,11 @@ int Mix_Init(int flags)
+ {
+ 	int result = 0;
+ 
++#ifdef MIX_INIT_SOUNDFONT_PATHS
++	if (!soundfont_paths)
++		soundfont_paths = SDL_strdup(MIX_INIT_SOUNDFONT_PATHS);
++#endif
++
+ 	if (flags & MIX_INIT_FLUIDSYNTH) {
+ #ifdef USE_FLUIDSYNTH_MIDI
+ 		if ((initialized & MIX_INIT_FLUIDSYNTH) || Mix_InitFluidSynth() == 0) {
+diff --git a/music.c b/music.c
+index b8622ea..fe3571d 100644
+--- a/music.c
++++ b/music.c
+@@ -1567,6 +1567,7 @@ int Mix_EachSoundFont(int (*function)(const char*, void*), void *data)
+ {
+ 	char *context, *path, *paths;
+ 	const char* cpaths = Mix_GetSoundFonts();
++	int soundfonts_found = 0;
+ 
+ 	if (!cpaths) {
+ 		Mix_SetError("No SoundFonts have been requested");
+@@ -1586,12 +1587,16 @@ int Mix_EachSoundFont(int (*function)(const char*, void*), void *data)
+ 	for (path = strtok_r(paths, ":;", &context); path; path = strtok_r(NULL, ":;", &context)) {
+ #endif
+ 		if (!function(path, data)) {
+-			SDL_free(paths);
+-			return 0;
++			continue;
++		} else {
++			soundfonts_found++;
+ 		}
+ 	}
+ 
+ 	SDL_free(paths);
+-	return 1;
++	if (soundfonts_found > 0)
++		return 1;
++	else
++		return 0;
+ }
+ #endif

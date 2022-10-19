@@ -1,0 +1,37 @@
+From: Simon McVittie <smcv@debian.org>
+Date: Wed, 27 Oct 2021 11:28:10 +0100
+Subject: build: Drop redundant use of AC_CONFIG_AUX_DIRS
+
+AC_CONFIG_AUX_DIRS is an undocumented, internal version of
+AC_CONFIG_AUX_DIR that takes a whitespace-separated list, instead of a
+single path to add to the list. It also does not automatically treat
+the given path as being relative to the $srcdir, unlike the documented
+AC_CONFIG_AUX_DIR.
+
+This package already has AC_CONFIG_AUX_DIR, so there's no need to use
+both.
+
+Newer versions of autoconf treat the argument to AC_CONFIG_AUX_DIRS
+as being literal (they do not expand the shell variable), causing
+autoreconf to fail if $srcdir is explicitly specified.
+
+Part of commit 8561d76a "autotools build system updates" upstream.
+
+Bug-Debian: https://bugs.debian.org/993094
+Forwarded: not-needed, part of a larger commit upstream already
+---
+ configure.in | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/configure.in b/configure.in
+index 5ea5667..a0a0e4b 100644
+--- a/configure.in
++++ b/configure.in
+@@ -41,7 +41,6 @@ AC_SUBST(LT_REVISION)
+ AC_SUBST(LT_AGE)
+ 
+ dnl Detect the canonical build and host environments
+-AC_CONFIG_AUX_DIRS($srcdir/build-scripts)
+ dnl AC_CANONICAL_HOST
+ 
+ dnl Check for tools

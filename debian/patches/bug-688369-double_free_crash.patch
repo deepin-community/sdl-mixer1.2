@@ -1,0 +1,42 @@
+From: Sam Lantinga <slouken@libsdl.org>
+Date: Wed, 27 Oct 2021 11:24:28 +0100
+Subject: Fix crash on double free if loading WAV file failed
+
+Backported from upstream:
+ # HG changeset patch
+ # User Sam Lantinga <slouken@libsdl.org>
+ # Date 1329087437 18000
+ # Node ID 2d713670db9b832b0c5aa700824900bc1fc3c3cd
+ # Parent  df72f22b4b411ad4b08f924329678aabd5ac97d6
+ Fixed 1418 - crash on double free if loading WAV file failed
+
+Last-Update: 2012-09-23
+Bug-Debian: http://bugs.debian.org/688369
+---
+ mixer.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/mixer.c b/mixer.c
+index 2f28384..ecb5da9 100644
+--- a/mixer.c
++++ b/mixer.c
+@@ -610,13 +610,15 @@ Mix_Chunk *Mix_LoadWAV_RW(SDL_RWops *src, int freesrc)
+ 			break;
+ 		default:
+ 			SDL_SetError("Unrecognized sound file type");
+-			return(0);			
++			if ( freesrc ) {
++				SDL_RWclose(src);
++			}
++			loaded = NULL;
++			break;
+ 	}
+ 	if ( !loaded ) {
++		/* The individual loaders have closed src if needed */
+ 		SDL_free(chunk);
+-		if ( freesrc ) {
+-			SDL_RWclose(src);
+-		}
+ 		return(NULL);
+ 	}
+ 

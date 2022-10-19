@@ -1,0 +1,4 @@
+usr/include/SDL
+usr/lib/*/libSDL_mixer.a
+usr/lib/*/libSDL_mixer.so
+usr/lib/*/pkgconfig

@@ -1,0 +1,40 @@
+#!/bin/sh
+# Copyright 2019-2021 Collabora Ltd.
+# SPDX-License-Identifier: Zlib
+# (see "zlib/libpng" in debian/copyright)
+
+set -eux
+
+WORKDIR="$(mktemp -d)"
+trap 'cd /; rm -fr "$WORKDIR"' 0 INT QUIT ABRT PIPE TERM
+
+if [ -n "${DEB_HOST_GNU_TYPE:-}" ]; then
+    CROSS_COMPILE="$DEB_HOST_GNU_TYPE-"
+else
+    CROSS_COMPILE=
+fi
+
+# For a manual test, set this to a non-empty value
+if [ -z "${TEST_REALLY_PLAY_AUDIO-}" ]; then
+    set +x
+    echo "Silencing output: run with TEST_REALLY_PLAY_AUDIO=yes to hear audio"
+    set -x
+    export SDL_AUDIODRIVER=dummy
+fi
+
+cp playmus.c "$WORKDIR"
+cp playwave.c "$WORKDIR"
+
+cd "$WORKDIR"
+
+# Deliberately word-splitting pkg-config's output:
+# shellcheck disable=SC2046
+"${CROSS_COMPILE}gcc" -oplaymus playmus.c $("${CROSS_COMPILE}pkg-config" --cflags --libs SDL_mixer)
+# shellcheck disable=SC2046
+"${CROSS_COMPILE}gcc" -oplaywave playwave.c $("${CROSS_COMPILE}pkg-config" --cflags --libs SDL_mixer)
+
+set -- xvfb-run -a
+
+# This audio file is shipped in the alsa-utils package
+"$@" ./playmus /usr/share/sounds/alsa/Front_Center.wav
+"$@" ./playwave /usr/share/sounds/alsa/Front_Center.wav

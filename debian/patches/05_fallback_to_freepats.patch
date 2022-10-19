@@ -1,0 +1,40 @@
+From: Fabian Greffrath <greffrath@leat.rub.de>
+Date: Wed, 27 Oct 2021 11:24:28 +0100
+Subject: If timidity.cfg is not present, please try to load freepats.cfg
+
+Introduced in 1.2.8-6 (Fri, 22 May 2009 10:33:13 -0400).
+
+Last-Update: 2012-01-20
+Bug-Debian: http://bugs.debian.org/453308
+---
+ timidity/config.h   | 1 +
+ timidity/timidity.c | 4 +++-
+ 2 files changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/timidity/config.h b/timidity/config.h
+index e32eedc..255acae 100644
+--- a/timidity/config.h
++++ b/timidity/config.h
+@@ -162,6 +162,7 @@ typedef char int8;
+    then specify the library directory in the configuration file. */
+ #define CONFIG_FILE	"timidity.cfg"
+ #define CONFIG_FILE_ETC "/etc/timidity.cfg"
++#define CONFIG_FILE_ETC_TIMIDITY_FREEPATS "/etc/timidity/freepats.cfg"
+ 
+ #if defined(__WIN32__) || defined(__OS2__)
+ #define DEFAULT_PATH	"C:\\TIMIDITY"
+diff --git a/timidity/timidity.c b/timidity/timidity.c
+index 0232c4c..2004cc0 100644
+--- a/timidity/timidity.c
++++ b/timidity/timidity.c
+@@ -286,7 +286,9 @@ int Timidity_Init(int rate, int format, int channels, int samples)
+   if (!env || read_config_file(env)<0) {
+     if (read_config_file(CONFIG_FILE)<0) {
+       if (read_config_file(CONFIG_FILE_ETC)<0) {
+-        return(-1);
++        if (read_config_file(CONFIG_FILE_ETC_TIMIDITY_FREEPATS)<0) {
++          return(-1);
++        }
+       }
+     }
+   }

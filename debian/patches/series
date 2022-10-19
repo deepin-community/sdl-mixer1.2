@@ -1,0 +1,8 @@
+01_no_lvorbis_logg.patch
+02_hurd.patch
+04_timidity_cfg_opts.patch
+05_fallback_to_freepats.patch
+bug-688369-double_free_crash.patch
+bug-715461-soundfont_paths.patch
+build-Drop-redundant-use-of-AC_CONFIG_AUX_DIRS.patch
+Fix-use-after-free-in-music_fluidsynth.c-backport-from-de.patch

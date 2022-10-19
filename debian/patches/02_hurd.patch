@@ -1,0 +1,77 @@
+From: Samuel Thibault <samuel.thibault@ens-lyon.org>
+Date: Wed, 27 Oct 2021 11:24:28 +0100
+Subject: Fix FTBFS on Hurd
+
+Introduced in 1.2.6-3 (Tue, 31 Jul 2007 14:16:36 +0200).
+
+Last-Update: 2012-01-20
+Bug-Debian: http://bugs.debian.org/428892
+---
+ music_cmd.c | 13 +++++++------
+ music_cmd.h |  4 ++--
+ 2 files changed, 9 insertions(+), 8 deletions(-)
+
+diff --git a/music_cmd.c b/music_cmd.c
+index 968794b..beefa09 100644
+--- a/music_cmd.c
++++ b/music_cmd.c
+@@ -53,10 +53,8 @@ MusicCMD *MusicCMD_LoadSong(const char *cmd, const char *file)
+ 		Mix_SetError("Out of memory");
+ 		return(NULL);
+ 	}
+-	strncpy(music->file, file, (sizeof music->file)-1);
+-	music->file[(sizeof music->file)-1] = '\0';
+-	strncpy(music->cmd, cmd, (sizeof music->cmd)-1);
+-	music->cmd[(sizeof music->cmd)-1] = '\0';
++	music->file = strdup(file);
++	music->cmd = strdup(cmd);
+ 	music->pid = 0;
+ 
+ 	/* We're done */
+@@ -155,7 +153,7 @@ void MusicCMD_Start(MusicCMD *music)
+ 
+ 	    /* Child process - executes here */
+ 	    case 0: {
+-		    char command[PATH_MAX];
++		    char *command;
+ 		    char **argv;
+ 
+ 		    /* Unblock signals in case we're called from a thread */
+@@ -166,11 +164,12 @@ void MusicCMD_Start(MusicCMD *music)
+ 		    }
+ 
+ 		    /* Execute the command */
+-		    strcpy(command, music->cmd);
++		    command = strdup(music->cmd);
+ 		    argv = parse_args(command, music->file);
+ 		    if ( argv != NULL ) {
+ 			execvp(argv[0], argv);
+ 		    }
++		    SDL_free(command);
+ 
+ 		    /* exec() failed */
+ 		    perror(argv[0]);
+@@ -219,6 +218,8 @@ void MusicCMD_Resume(MusicCMD *music)
+ /* Close the given music stream */
+ void MusicCMD_FreeSong(MusicCMD *music)
+ {
++	SDL_free(music->file);
++	SDL_free(music->cmd);
+ 	SDL_free(music);
+ }
+ 
+diff --git a/music_cmd.h b/music_cmd.h
+index 10168de..3ff971e 100644
+--- a/music_cmd.h
++++ b/music_cmd.h
+@@ -30,8 +30,8 @@
+ # include <linux/limits.h>
+ #endif
+ typedef struct {
+-	char file[PATH_MAX];
+-	char cmd[PATH_MAX];
++	char *file;
++	char *cmd;
+ 	pid_t pid;
+ } MusicCMD;
+ 
